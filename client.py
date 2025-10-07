@@ -39,7 +39,7 @@ logging.getLogger().handlers = []
 class VoiceAgent:
     def __init__(
         self,
-        industry="deepgram",
+        persona="krishna",
         voiceModel="aura-2-thalia-en",
         voiceName="",
         browser_audio=False,
@@ -55,7 +55,7 @@ class VoiceAgent:
         self.output_device_id = None
         self.browser_audio = browser_audio  # For browser microphone input
         self.browser_output = browser_audio  # Use same setting for browser output
-        self.agent_templates = AgentTemplates(industry, voiceModel, voiceName)
+        self.agent_templates = AgentTemplates(persona, voiceModel, voiceName)
 
     def set_loop(self, loop):
         self.loop = loop
@@ -665,8 +665,8 @@ def handle_start_voice_agent(data=None):
     global voice_agent
     logger.info(f"Starting voice agent with data: {data}")
     if voice_agent is None:
-        # Get industry from data or default to deepgram
-        industry = data.get("industry", "deepgram") if data else "deepgram"
+        # Get persona from data or default to deepgram
+        persona = data.get("persona", "krishna") if data else "krishna"
         voiceModel = (
             data.get("voiceModel", "aura-2-thalia-en") if data else "aura-2-thalia-en"
         )
@@ -676,7 +676,7 @@ def handle_start_voice_agent(data=None):
         browser_audio = data.get("browserAudio", False) if data else False
 
         voice_agent = VoiceAgent(
-            industry=industry,
+            persona=persona,
             voiceModel=voiceModel,
             voiceName=voiceName,
             browser_audio=browser_audio,
@@ -777,7 +777,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("\n1. Open this link in your browser to start the demo:")
     print("   http://127.0.0.1:5000")
-    print("\n2. Click 'Start Voice Agent' when the page loads")
+    print("\n2. Click 'Start Talking' when the page loads")
     print("\n3. Speak with the agent using your microphone")
     print("\nPress Ctrl+C to stop the server\n")
     print("=" * 60 + "\n")

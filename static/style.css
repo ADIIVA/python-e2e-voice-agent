@@ -105,7 +105,7 @@ body:not(.dark-mode) {
     transition: background-color 0.3s, transform 0.2s;
 }
 
-.current-industry {
+.current-persona {
     width: 150px;
     padding: 8px;
     margin-top: 10px;
@@ -117,16 +117,16 @@ body:not(.dark-mode) {
     transition: all 0.3s;
 }
 
-body:not(.dark-mode) .current-industry {
+body:not(.dark-mode) .current-persona {
     color: var(--text-color-light);
     background-color: var(--item-bg-light);
 }
 
-.current-industry span {
+.current-persona span {
     font-weight: bold;
 }
 
-.industry-button {
+.persona-button {
     width: 150px;
     padding: 10px;
     border-radius: 5px;
@@ -139,12 +139,12 @@ body:not(.dark-mode) .current-industry {
     transition: background-color 0.3s, transform 0.2s;
 }
 
-.industry-button:hover {
+.persona-button:hover {
     background-color: #3d8be0;
     transform: scale(1.05);
 }
 
-.industry-button:active {
+.persona-button:active {
     transform: scale(0.95);
 }
 
@@ -534,7 +534,7 @@ body.dark-mode .device-select select option {
     color: var(--text-color-dark);
 }
 
-/* Industry Selection Popup Styles */
+/* persona Selection Popup Styles */
 .popup-overlay {
     display: none;
     position: fixed;
@@ -570,13 +570,13 @@ body:not(.dark-mode) .popup-content {
     margin-bottom: 15px;
 }
 
-.industry-list {
+.persona-list {
     max-height: 300px;
     overflow-y: auto;
     margin-bottom: 15px;
 }
 
-.industry-item {
+.persona-item {
     padding: 10px 15px;
     margin-bottom: 5px;
     background-color: var(--item-bg-dark);
@@ -585,15 +585,15 @@ body:not(.dark-mode) .popup-content {
     transition: background-color 0.2s, transform 0.2s;
 }
 
-body:not(.dark-mode) .industry-item {
+body:not(.dark-mode) .persona-item {
     background-color: var(--item-bg-light);
 }
 
-.industry-item:hover {
+.persona-item:hover {
     transform: translateX(5px);
 }
 
-.industry-item.selected {
+.persona-item.selected {
     border-left: 3px solid #4a9eff;
     font-weight: bold;
 }

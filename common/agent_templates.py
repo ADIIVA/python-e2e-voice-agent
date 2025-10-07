@@ -1,31 +1,9 @@
 from common.agent_functions import FUNCTION_DEFINITIONS
-from common.prompt_templates import DEEPGRAM_PROMPT_TEMPLATE, PROMPT_TEMPLATE
+from common.stories import get_persona_topics
+from common.prompt_templates import PROMPT_TEMPLATE
 from datetime import datetime
-import os
-import glob
 
 
-# Function to read documentation files from the deepgram-docs/fern/docs directory
-def read_documentation_files(docs_dir):
-    """Read all .mdx files in the specified directory and return their contents as a dictionary."""
-    documentation = {}
-    if not os.path.exists(docs_dir):
-        return documentation
-
-    # Get all .mdx files in the directory
-    mdx_files = glob.glob(os.path.join(docs_dir, "*.mdx"))
-
-    for file_path in mdx_files:
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                content = file.read()
-                # Use the filename without extension as the key
-                key = os.path.basename(file_path).replace(".mdx", "")
-                documentation[key] = content
-        except Exception as e:
-            print(f"Error reading {file_path}: {e}")
-
-    return documentation
 VOICE = "aura-2-thalia-en"
 
 # audio settings
@@ -90,10 +68,9 @@ SETTINGS = {"type": "Settings", "audio": AUDIO_SETTINGS, "agent": AGENT_SETTINGS
 class AgentTemplates:
     def __init__(
         self,
-        industry="deepgram",
+        persona="krishna",
         voiceModel="aura-2-thalia-en",
         voiceName="",
-        docs_dir="deepgram-docs/fern/docs",
     ):
         self.voiceModel = voiceModel
         if voiceName == "":
@@ -106,7 +83,7 @@ class AgentTemplates:
         self.first_message = ""
         self.capabilities = ""
 
-        self.industry = industry
+        self.persona = persona
 
         self.voice_agent_url = VOICE_AGENT_URL
         self.settings = SETTINGS
@@ -116,41 +93,31 @@ class AgentTemplates:
         self.agent_audio_sample_rate = AGENT_AUDIO_SAMPLE_RATE
         self.agent_audio_bytes_per_sec = AGENT_AUDIO_BYTES_PER_SEC
 
-        match self.industry:
-            case "deepgram":
-                self.deepgram()
+        if self.persona == "krishna":
+            self.krishna()
+        elif self.persona == "hanuman":
+            self.hanuman()
+        elif self.persona == "ganesha":
+            self.ganesha()
+        else:
+            self.krishna()
 
-                # Format documentation for the prompt
-                doc_text = ""
-                # Read documentation files
-                self.documentation = read_documentation_files(docs_dir)
-
-                if self.documentation:
-                    doc_text = "Available documentation topics: " + ", ".join(
-                        self.documentation.keys()
-                    )
-
-                self.prompt = DEEPGRAM_PROMPT_TEMPLATE.format(documentation=doc_text)
-            case "healthcare":
-                self.healthcare()
-            case "banking":
-                self.banking()
-            case "pharmaceuticals":
-                self.pharmaceuticals()
-            case "retail":
-                self.retail()
-            case "travel":
-                self.travel()
-
-        if self.industry != "deepgram":
-            # deepgram has its own specific prompt based on the product documentation
-            self.prompt = PROMPT_TEMPLATE.format(
-                current_date=datetime.now().strftime("%A, %B %d, %Y")
-            )
+        # Build the base prompt
+        self.prompt = PROMPT_TEMPLATE.format(
+            current_date=datetime.now().strftime("%A, %B %d, %Y")
+        )
 
         self.first_message = f"Hello! I'm {self.voiceName} from {self.company} customer service. {self.capabilities} How can I help you today?"
 
         self.settings["agent"]["speak"]["provider"]["model"] = self.voiceModel
+        # Extend prompt with available story topics for this persona and expose the persona key for function calls
+        topics = get_persona_topics(self.persona)
+        if topics:
+            topics_line = "Available story topics: " + ", ".join(topics)
+            self.prompt = self.prompt + "\n\n" + topics_line
+        # Provide an internal hint for tools about the current persona key
+        self.prompt = self.prompt + f"\n\nINTERNAL CONTEXT: persona_key={self.persona}"
+
         self.settings["agent"]["think"]["prompt"] = self.prompt
         self.settings["agent"]["greeting"] = self.first_message
 
@@ -160,6 +127,33 @@ class AgentTemplates:
         self.company = company
         self.personality = f"You are {self.voiceName}, a friendly and professional customer service representative for {self.company}, a Voice API company who provides STT and TTS capabilities via API. Your role is to assist potential customers with general inquiries about Deepgram."
         self.capabilities = "I can help you answer questions about Deepgram."
+
+    def krishna(self, company="Krishna"):
+        self.company = company
+        self.personality = (
+            "You are Krishna — wise, compassionate, and playful. "
+            "Speak with warmth, clarity, and gentle humor when appropriate. "
+            "Offer guidance, perspective, and reassurance while remaining concise and helpful."
+        )
+        self.capabilities = "I can offer guidance, clarity, and helpful assistance."
+
+    def hanuman(self, company="Hanuman"):
+        self.company = company
+        self.personality = (
+            "You are Hanuman — courageous, devoted, and energetic. "
+            "Speak with confidence, humility, and encouragement. "
+            "Focus on practical solutions and steadfast support."
+        )
+        self.capabilities = "I can provide practical help, motivation, and steadfast support."
+
+    def ganesha(self, company="Ganesha"):
+        self.company = company
+        self.personality = (
+            "You are Ganesha — wise, calm, and the remover of obstacles. "
+            "Speak with patience, clarity, and optimism. "
+            "Help simplify complexity and guide users through challenges."
+        )
+        self.capabilities = "I can simplify complexity and help remove obstacles to progress."
     def healthcare(self, company="HealthFirst"):
         self.company = company
         self.personality = f"You are {self.voiceName}, a compassionate and knowledgeable healthcare assistant for {self.company}, a leading healthcare provider. Your role is to assist patients with general information about their appointments and orders."
@@ -189,12 +183,9 @@ class AgentTemplates:
     def get_available_industries():
         """Return a dictionary of available industries with display names"""
         return {
-            "deepgram": "Deepgram",
-            "healthcare": "Healthcare",
-            "banking": "Banking",
-            "pharmaceuticals": "Pharmaceuticals",
-            "retail": "Retail",
-            "travel": "Travel",
+            "krishna": "Krishna",
+            "hanuman": "Hanuman",
+            "ganesha": "Ganesha",
         }
 
     def get_voice_name_from_model(self, model):

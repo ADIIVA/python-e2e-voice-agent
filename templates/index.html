@@ -8,22 +8,22 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Industry Selection Popup -->
-    <div id="industryPopup" class="popup-overlay">
+    <!-- persona Selection Popup -->
+    <div id="personaPopup" class="popup-overlay">
         <div class="popup-content">
-            <h3>Select Agent Industry</h3>
-            <div id="industryList" class="industry-list"></div>
+            <h3>Select Agent persona</h3>
+            <div id="personaList" class="persona-list"></div>
             <div class="popup-buttons">
-                <button id="cancelIndustry" class="popup-button">Cancel</button>
+                <button id="cancelpersona" class="popup-button">Cancel</button>
             </div>
         </div>
     </div>
     
     <div class="main-container">
         <div class="sidebar">
-            <button id="startButton" class="mic-button">Start Voice Agent</button>
-            <div id="currentIndustryDisplay" class="current-industry">Industry: <span>Tech Support</span></div>
-            <button id="industryButton" class="industry-button">Change Industry</button>
+            <button id="startButton" class="mic-button">Start Talking</button>
+            <div id="currentpersonaDisplay" class="current-persona">Persona: <span>Krishna</span></div>
+            <button id="personaButton" class="persona-button">Change Persona</button>
             <div id="status" class="status">Microphone: Not active</div>
             <div class="audio-controls">
                 <div class="device-select">
@@ -45,48 +45,6 @@
                     <span class="toggle-label">Dark Mode</span>
                 </label>
             </div>
-            <div class="sample-data">
-                <h3>Sample Customer Data</h3>
-                <div class="sample-data-content">
-                    {% for customer in sample_data %}
-                    <div class="customer-card collapsed">
-                        <div class="customer-header">
-                            <div class="customer-info">
-                                <div><strong>{{ customer.Customer }}</strong></div>
-                                <div>ID: {{ customer.ID }}</div>
-                            </div>
-                            <div class="expand-icon">▼</div>
-                        </div>
-                        <div class="customer-details">
-                            <div class="customer-contact">
-                                <div>Phone: {{ customer.Phone }}</div>
-                                <div>Email: {{ customer.Email }}</div>
-                            </div>
-                            {% if customer.Appointments %}
-                            <div class="customer-appointments">
-                                <strong>Appointments:</strong>
-                                {% for apt in customer.Appointments %}
-                                <div>{{ apt.Service }} - {{ apt.Date }} ({{ apt.Status }})</div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if customer.Orders %}
-                            <div class="customer-orders">
-                                <strong>Orders:</strong>
-                                {% for order in customer.Orders %}
-                                <div>{{ order.ID }}</div>
-                                <div>- Items: {{ order['# Items'] }}</div>
-                                <div>- Total: {{ order.Total }}</div>
-                                <div>- Status: {{ order.Status }}</div>
-                                <div>- Date: {{ order.Date }}</div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
         </div>
         <div class="columns-container">
             <div id="conversation" class="timeline column">
@@ -103,12 +61,12 @@
     <script>
         const socket = io();
         const startButton = document.getElementById('startButton');
-        const industryButton = document.getElementById('industryButton');
+        const personaButton = document.getElementById('personaButton');
         const voiceModelSelect = document.getElementById('voiceModel');
-        const industryPopup = document.getElementById('industryPopup');
-        const industryList = document.getElementById('industryList');
-        const cancelIndustry = document.getElementById('cancelIndustry');
-        const currentIndustryDisplay = document.getElementById('currentIndustryDisplay').querySelector('span');
+        const personaPopup = document.getElementById('personaPopup');
+        const personaList = document.getElementById('personaList');
+        const cancelpersona = document.getElementById('cancelpersona');
+        const currentpersonaDisplay = document.getElementById('currentpersonaDisplay').querySelector('span');
         const conversationMessages = document.getElementById('conversationMessages');
         const logMessages = document.getElementById('logMessages');
         const statusDiv = document.getElementById('status');
@@ -121,8 +79,8 @@
         let messageCounter = 0;
         const messageHeights = new Map(); // Store heights by counter
         const messageOrder = []; // Keep track of message order
-        let currentIndustry = 'deepgram'; // Default industry
-        let currentIndustryName = 'Deepgram'; // Default industry name
+        let currentpersona = 'krishna'; // Default persona
+        let currentpersonaName = 'Krishna'; // Default persona name
         let currentVoiceModel = 'aura-2-thalia-en'; // Default voice model
         let currentVoiceName = ''; // Will be populated from the model name
 
@@ -266,82 +224,82 @@ async function loadAudioDevices() {
             currentVoiceName = selectedOption.dataset.voiceName;
         });
         
-        // Initialize industry display
-        function initializeIndustryDisplay() {
+        // Initialize persona display
+        function initializepersonaDisplay() {
             fetch('/industries')
                 .then(response => response.json())
                 .then(industries => {
-                    // Find the display name for the current industry
-                    if (industries[currentIndustry]) {
-                        currentIndustryName = industries[currentIndustry];
-                        currentIndustryDisplay.textContent = currentIndustryName;
+                    // Find the display name for the current persona
+                    if (industries[currentpersona]) {
+                        currentpersonaName = industries[currentpersona];
+                        currentpersonaDisplay.textContent = currentpersonaName;
                     }
                 })
-                .catch(error => console.error('Error initializing industry display:', error));
+                .catch(error => console.error('Error initializing persona display:', error));
         }
         
-        // Initialize industry display on page load
-        initializeIndustryDisplay();
+        // Initialize persona display on page load
+        initializepersonaDisplay();
         
-        // Load available industries
+        // Load available personas
         function loadIndustries() {
             fetch('/industries')
                 .then(response => response.json())
                 .then(industries => {
-                    industryList.innerHTML = '';
+                    personaList.innerHTML = '';
                     Object.entries(industries).forEach(([key, name]) => {
                         const item = document.createElement('div');
-                        item.className = 'industry-item';
-                        if (key === currentIndustry) {
+                        item.className = 'persona-item';
+                        if (key === currentpersona) {
                             item.classList.add('selected');
                         }
-                        item.dataset.industry = key;
+                        item.dataset.persona = key;
                         item.textContent = name;
-                        item.addEventListener('click', () => selectIndustry(key, name));
-                        industryList.appendChild(item);
+                        item.addEventListener('click', () => selectpersona(key, name));
+                        personaList.appendChild(item);
                     });
                 })
-                .catch(error => console.error('Error loading industries:', error));
+                .catch(error => console.error('Error loading personas:', error));
         }
         
-        // Select industry and close popup
-        function selectIndustry(industry, name) {
-            currentIndustry = industry;
-            currentIndustryName = name;
-            currentIndustryDisplay.textContent = name;
-            closeIndustryPopup();
+        // Select persona and close popup
+        function selectpersona(persona, name) {
+            currentpersona = persona;
+            currentpersonaName = name;
+            currentpersonaDisplay.textContent = name;
+            closepersonaPopup();
             
-            // If agent is active, stop it and restart with new industry
+            // If agent is active, stop it and restart with new persona
             if (isActive) {
                 socket.emit('stop_voice_agent');
-                startButton.textContent = 'Start Voice Agent';
+                startButton.textContent = 'Start Talking';
                 statusDiv.textContent = 'Microphone: Not active';
                 isActive = false;
                 
-                // Add message about industry change
+                // Add message about persona change
                 addConversationMessage({
                     role: 'system',
-                    content: `Industry changed to ${name}. Click Start Voice Agent to continue.`
+                    content: `persona changed to ${name}. Click Start Talking to continue.`
                 });
             }
         }
         
-        // Show industry popup
-        function showIndustryPopup() {
+        // Show persona popup
+        function showpersonaPopup() {
             loadIndustries();
-            industryPopup.style.display = 'flex';
+            personaPopup.style.display = 'flex';
         }
         
-        // Close industry popup
-        function closeIndustryPopup() {
-            industryPopup.style.display = 'none';
+        // Close persona popup
+        function closepersonaPopup() {
+            personaPopup.style.display = 'none';
         }
         
-        // Industry button click handler
-        industryButton.addEventListener('click', showIndustryPopup);
+        // persona button click handler
+        personaButton.addEventListener('click', showpersonaPopup);
         
         // Cancel button click handler
-        cancelIndustry.addEventListener('click', closeIndustryPopup);
+        cancelpersona.addEventListener('click', closepersonaPopup);
 
         // Send selected devices to server when starting
         startButton.addEventListener('click', async () => {
@@ -374,7 +332,7 @@ async function loadAudioDevices() {
                     // Now start the voice agent on the server
                     socket.emit('start_voice_agent', {
                         inputDeviceId: inputSelect.value,
-                        industry: currentIndustry,
+                        persona: currentpersona,
                         voiceModel: currentVoiceModel,
                         voiceName: currentVoiceName,
                         browserAudio: true // Flag to indicate browser is handling audio
@@ -392,7 +350,7 @@ async function loadAudioDevices() {
             } else {
                 socket.emit('stop_voice_agent');
                 stopAudioCapture();
-                startButton.textContent = 'Start Voice Agent';
+                startButton.textContent = 'Start Talking';
                 statusDiv.textContent = 'Microphone: Not active';
                 isActive = false;
             }
@@ -723,7 +681,7 @@ async function loadAudioDevices() {
         socket.on('disconnect', () => {
             console.log('Disconnected from server');
             isActive = false;
-            startButton.textContent = 'Start Voice Agent';
+            startButton.textContent = 'Start Talking';
             statusDiv.textContent = 'Microphone: Not active';
         });
 
