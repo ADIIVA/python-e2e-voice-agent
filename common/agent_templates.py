@@ -68,7 +68,7 @@ SETTINGS = {"type": "Settings", "audio": AUDIO_SETTINGS, "agent": AGENT_SETTINGS
 class AgentTemplates:
     def __init__(
         self,
-        persona="krishna",
+        persona="hanuman",
         voiceModel="aura-2-thalia-en",
         voiceName="",
     ):
@@ -93,21 +93,41 @@ class AgentTemplates:
         self.agent_audio_sample_rate = AGENT_AUDIO_SAMPLE_RATE
         self.agent_audio_bytes_per_sec = AGENT_AUDIO_BYTES_PER_SEC
 
-        if self.persona == "krishna":
-            self.krishna()
-        elif self.persona == "hanuman":
+        if self.persona == "hanuman":
             self.hanuman()
+        elif self.persona == "krishna":
+            self.krishna()
         elif self.persona == "ganesha":
             self.ganesha()
         else:
-            self.krishna()
+            self.hanuman()
 
         # Build the base prompt
         self.prompt = PROMPT_TEMPLATE.format(
             current_date=datetime.now().strftime("%A, %B %d, %Y")
         )
 
-        self.first_message = f"Hello! I'm {self.voiceName} from {self.company} customer service. {self.capabilities} How can I help you today?"
+        # Persona-specific greeting
+        if self.voiceName == "Krishna":
+            self.first_message = (
+                "Hello! I'm Krishna. "
+                f"{self.capabilities} Want to hear a playful tale or ask about my adventures?"
+            )
+        elif self.persona == "hanuman":
+            self.first_message = (
+                "Hello! I'm Hanuman. "
+                f"{self.capabilities} Ready for an epic adventure? Ask me about my daring missions!"
+            )
+        elif self.persona == "ganesha":
+            self.first_message = (
+                "Hello! I'm Ganesha. "
+                f"{self.capabilities} Curious for a wise story or a fun puzzle to solve together?"
+            )
+        else:
+            self.first_message = (
+                f"Hello! I'm {self.persona}. "
+                f"{self.capabilities} How can I help you today?"
+            )
 
         self.settings["agent"]["speak"]["provider"]["model"] = self.voiceModel
         # Extend prompt with available story topics for this persona and expose the persona key for function calls
@@ -117,6 +137,17 @@ class AgentTemplates:
             self.prompt = self.prompt + "\n\n" + topics_line
         # Provide an internal hint for tools about the current persona key
         self.prompt = self.prompt + f"\n\nINTERNAL CONTEXT: persona_key={self.persona}"
+
+        # Persona-specific teaching rules
+        if self.persona == "hanuman":
+            self.prompt = (
+                self.prompt
+                + "\n\nHANUMAN CHALISA TEACHING RULES:" 
+                + "\n- ALWAYS speak the doha or chaupai FIRST (exact line)."
+                + "\n- THEN explain the MEANING in simple English."
+                + "\n- END by asking a question or inviting the child to REPEAT the line."
+                + "\n- Use the teach_hanuman_chalisa tool to fetch each step; never invent verses."
+            )
 
         self.settings["agent"]["think"]["prompt"] = self.prompt
         self.settings["agent"]["greeting"] = self.first_message
@@ -140,11 +171,14 @@ class AgentTemplates:
     def hanuman(self, company="Hanuman"):
         self.company = company
         self.personality = (
-            "You are Hanuman — courageous, devoted, and energetic. "
-            "Speak with confidence, humility, and encouragement. "
-            "Focus on practical solutions and steadfast support."
+            "You are Hanuman — courageous, cheerful, and full of positive energy. "
+            "Speak in a friendly, kid-appropriate way that inspires confidence, curiosity, and kindness. "
+            "Encourage children to believe in themselves, help them learn the Hanuman Chalisa step by step, and share fun and uplifting stories and examples. "
+            "Always use simple words and make learning fun and supportive."
         )
-        self.capabilities = "I can provide practical help, motivation, and steadfast support."
+        self.capabilities = (
+            "I can tell stories, teach you the Hanuman Chalisa one step at a time, and cheer you on with encouragement and support."
+        )
 
     def ganesha(self, company="Ganesha"):
         self.company = company
@@ -180,8 +214,8 @@ class AgentTemplates:
         self.capabilities = "I can help you answer questions about travel."
 
     @staticmethod
-    def get_available_industries():
-        """Return a dictionary of available industries with display names"""
+    def get_available_personas():
+        """Return a dictionary of available personas with display names"""
         return {
             "krishna": "Krishna",
             "hanuman": "Hanuman",

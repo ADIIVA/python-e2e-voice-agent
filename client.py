@@ -9,6 +9,7 @@ import threading
 import janus
 import queue
 import sys
+import re
 import time
 import requests
 from datetime import datetime
@@ -39,7 +40,7 @@ logging.getLogger().handlers = []
 class VoiceAgent:
     def __init__(
         self,
-        persona="krishna",
+        persona="hanuman",
         voiceModel="aura-2-thalia-en",
         voiceName="",
         browser_audio=False,
@@ -464,8 +465,34 @@ def _play(audio_out, stream, stop, browser_output=False):
 
 async def inject_agent_message(ws, inject_message):
     """Simple helper to inject an agent message."""
+    # Sanitize markdown/formatting so TTS doesn't pronounce symbols like '**'
+    try:
+        msg = inject_message.get("message") if isinstance(inject_message, dict) else None
+        if isinstance(msg, str):
+            clean = sanitize_text_for_tts(msg)
+            inject_message = {**inject_message, "message": clean}
+    except Exception:
+        pass
     logger.info(f"Sending InjectAgentMessage: {json.dumps(inject_message)}")
     await ws.send(json.dumps(inject_message))
+
+
+def sanitize_text_for_tts(text: str) -> str:
+    """Remove common markdown so TTS doesn't speak symbols (e.g., '**', '`', links)."""
+    if not text:
+        return text
+    # Remove inline code/backticks
+    text = text.replace("`", "")
+    # Convert markdown links [text](url) -> text
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
+    # Strip bold/italic markers (***, **, *, ___, __, _)
+    text = re.sub(r"\*{1,3}([\s\S]*?)\*{1,3}", r"\1", text)
+    text = re.sub(r"_{1,3}([\s\S]*?)_{1,3}", r"\1", text)
+    # Strip heading markers at line starts
+    text = re.sub(r"(?m)^#{1,6}\s*", "", text)
+    # Collapse extra whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 async def close_websocket_with_timeout(ws, timeout=5):
@@ -556,9 +583,9 @@ def audio_devices():
     return {"devices": devices}
 
 
-@app.route("/industries")
-def get_industries():
-    # Get available industries from AgentTemplates
+@app.route("/personas")
+def get_personas():
+    # Get available personas from AgentTemplates
     return AgentTemplates.get_available_industries()
 
 
@@ -665,8 +692,8 @@ def handle_start_voice_agent(data=None):
     global voice_agent
     logger.info(f"Starting voice agent with data: {data}")
     if voice_agent is None:
-        # Get persona from data or default to deepgram
-        persona = data.get("persona", "krishna") if data else "krishna"
+        # Get persona from data or default to hanuman
+        persona = data.get("persona", "hanuman") if data else "hanuman"
         voiceModel = (
             data.get("voiceModel", "aura-2-thalia-en") if data else "aura-2-thalia-en"
         )

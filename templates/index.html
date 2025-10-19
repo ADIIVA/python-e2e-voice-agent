@@ -22,7 +22,7 @@
     <div class="main-container">
         <div class="sidebar">
             <button id="startButton" class="mic-button">Start Talking</button>
-            <div id="currentpersonaDisplay" class="current-persona">Persona: <span>Krishna</span></div>
+            <div id="currentpersonaDisplay" class="current-persona">Persona: <span>Hanuman</span></div>
             <button id="personaButton" class="persona-button">Change Persona</button>
             <div id="status" class="status">Microphone: Not active</div>
             <div class="audio-controls">
@@ -79,8 +79,8 @@
         let messageCounter = 0;
         const messageHeights = new Map(); // Store heights by counter
         const messageOrder = []; // Keep track of message order
-        let currentpersona = 'krishna'; // Default persona
-        let currentpersonaName = 'Krishna'; // Default persona name
+        let currentpersona = 'hanuman'; // Default persona
+        let currentpersonaName = 'Hanuman'; // Default persona name
         let currentVoiceModel = 'aura-2-thalia-en'; // Default voice model
         let currentVoiceName = ''; // Will be populated from the model name
 
@@ -226,12 +226,12 @@ async function loadAudioDevices() {
         
         // Initialize persona display
         function initializepersonaDisplay() {
-            fetch('/industries')
+            fetch('/personas')
                 .then(response => response.json())
-                .then(industries => {
+                .then(personas => {
                     // Find the display name for the current persona
-                    if (industries[currentpersona]) {
-                        currentpersonaName = industries[currentpersona];
+                    if (personas[currentpersona]) {
+                        currentpersonaName = personas[currentpersona];
                         currentpersonaDisplay.textContent = currentpersonaName;
                     }
                 })
@@ -242,12 +242,12 @@ async function loadAudioDevices() {
         initializepersonaDisplay();
         
         // Load available personas
-        function loadIndustries() {
-            fetch('/industries')
+        function loadPersonas() {
+            fetch('/personas')
                 .then(response => response.json())
-                .then(industries => {
+                .then(personas => {
                     personaList.innerHTML = '';
-                    Object.entries(industries).forEach(([key, name]) => {
+                    Object.entries(personas).forEach(([key, name]) => {
                         const item = document.createElement('div');
                         item.className = 'persona-item';
                         if (key === currentpersona) {
@@ -791,6 +791,7 @@ async function loadAudioDevices() {
             audioOutputSampleRate = 16000;
         }
 
+        // PCM chunked audio from server (verse playback)
         socket.on('audio_output', (data) => {
             if (isActive) {
                 if (typeof data.seq === 'number') {
@@ -800,6 +801,31 @@ async function loadAudioDevices() {
                     lastSeq = data.seq;
                 }
                 playAudioOutput(data.audio, data.sampleRate);
+            }
+        });
+
+        // Server indicates no more PCM chunks; emit playback done after a short grace
+        socket.on('audio_output_done', () => {
+            setTimeout(() => {
+                try { socket.emit('audio_playback_done'); } catch {}
+            }, 300);
+        });
+
+        // Direct MP3 payload playback (server emits raw mp3 bytes)
+        socket.on('audio_mp3', (data) => {
+            try {
+                const bytes = new Uint8Array(data.audio);
+                const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.onended = () => {
+                    try { URL.revokeObjectURL(url); } catch {}
+                    // Notify server that playback has completed
+                    try { socket.emit('audio_playback_done'); } catch {}
+                };
+                audio.play().catch(err => console.error('MP3 playback error:', err));
+            } catch (e) {
+                console.error('Error handling audio_mp3:', e);
             }
         });
 

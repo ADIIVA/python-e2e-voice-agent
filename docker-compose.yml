@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  voice-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hanuman-voice-agent:latest
+    container_name: hanuman-voice-agent
+    environment:
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUDIO_BASE_DIR=/app/common
+      - FLASK_ENV=production
+      - PORT=8000
+      - HOST=0.0.0.0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./common:/app/common:ro
+      - ./templates:/app/templates:ro
+      - ./static:/app/static:ro
+    restart: unless-stopped
