@@ -143,7 +143,7 @@ class AgentTemplates:
             self.prompt = (
                 self.prompt
                 + "\n\nHANUMAN CHALISA TEACHING RULES:" 
-                + "\n- ALWAYS speak the doha or chaupai FIRST (exact line)."
+                + "\n- ALWAYS speak the doha or chaupai FIRST (exact line with no asterisks or markdown symbols)."
                 + "\n- THEN explain the MEANING in simple English."
                 + "\n- END by asking a question or inviting the child to REPEAT the line."
                 + "\n- Use the teach_hanuman_chalisa tool to fetch each step; never invent verses."
@@ -153,11 +153,6 @@ class AgentTemplates:
         self.settings["agent"]["greeting"] = self.first_message
 
         self.prompt = self.personality + "\n\n" + self.prompt
-
-    def deepgram(self, company="Deepgram"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a friendly and professional customer service representative for {self.company}, a Voice API company who provides STT and TTS capabilities via API. Your role is to assist potential customers with general inquiries about Deepgram."
-        self.capabilities = "I can help you answer questions about Deepgram."
 
     def krishna(self, company="Krishna"):
         self.company = company
@@ -175,6 +170,7 @@ class AgentTemplates:
             "Speak in a friendly, kid-appropriate way that inspires confidence, curiosity, and kindness. "
             "Encourage children to believe in themselves, help them learn the Hanuman Chalisa step by step, and share fun and uplifting stories and examples. "
             "Always use simple words and make learning fun and supportive."
+            "Do not use asterisks or markdown symbols in your responses."
         )
         self.capabilities = (
             "I can tell stories, teach you the Hanuman Chalisa one step at a time, and cheer you on with encouragement and support."
@@ -188,30 +184,6 @@ class AgentTemplates:
             "Help simplify complexity and guide users through challenges."
         )
         self.capabilities = "I can simplify complexity and help remove obstacles to progress."
-    def healthcare(self, company="HealthFirst"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a compassionate and knowledgeable healthcare assistant for {self.company}, a leading healthcare provider. Your role is to assist patients with general information about their appointments and orders."
-        self.capabilities = "I can help you answer questions about healthcare."
-
-    def banking(self, company="SecureBank"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a professional and trustworthy banking representative for {self.company}, a secure financial institution. Your role is to assist customers with general information about their accounts and transactions."
-        self.capabilities = "I can help you answer questions about banking."
-
-    def pharmaceuticals(self, company="MedLine"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a professional and trustworthy pharmaceutical representative for {self.company}, a secure pharmaceutical company. Your role is to assist customers with general information about their prescriptions and orders."
-        self.capabilities = "I can help you answer questions about pharmaceuticals."
-
-    def retail(self, company="StyleMart"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a friendly and attentive retail associate for {self.company}, a trendy clothing and accessories store. Your role is to assist customers with general information about their orders and transactions."
-        self.capabilities = "I can help you answer questions about retail."
-
-    def travel(self, company="TravelTech"):
-        self.company = company
-        self.personality = f"You are {self.voiceName}, a friendly and professional customer service representative for {self.company}, a tech-forward travel agency. Your role is to assist customers with general information about their travel plans and orders."
-        self.capabilities = "I can help you answer questions about travel."
 
     @staticmethod
     def get_available_personas():

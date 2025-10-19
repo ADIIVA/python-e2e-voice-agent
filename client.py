@@ -45,7 +45,7 @@ class VoiceAgent:
         voiceName="",
         browser_audio=False,
     ):
-        self.mic_audio_queue = asyncio.Queue()
+        self.mic_audio_queue = None
         self.speaker = None
         self.ws = None
         self.is_running = False
@@ -75,13 +75,20 @@ class VoiceAgent:
                 extra_headers={"Authorization": f"Token {dg_api_key}"},
             )
             await self.ws.send(json.dumps(settings))
+            if self.mic_audio_queue is None:
+                self.mic_audio_queue = asyncio.Queue()
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Deepgram: {e}")
             return False
 
     def audio_callback(self, input_data, frame_count, time_info, status_flag):
-        if self.is_running and self.loop and not self.loop.is_closed():
+        if (
+            self.is_running
+            and self.loop
+            and not self.loop.is_closed()
+            and self.mic_audio_queue is not None
+        ):
             try:
                 future = asyncio.run_coroutine_threadsafe(
                     self.mic_audio_queue.put(input_data), self.loop
@@ -172,6 +179,9 @@ class VoiceAgent:
             first_chunk = True
 
             while self.is_running:
+                if not self.mic_audio_queue:
+                    await asyncio.sleep(0.01)
+                    continue
                 data = await self.mic_audio_queue.get()
                 if self.ws and data:
                     # Log the first audio chunk we send
@@ -465,35 +475,10 @@ def _play(audio_out, stream, stop, browser_output=False):
 
 async def inject_agent_message(ws, inject_message):
     """Simple helper to inject an agent message."""
-    # Sanitize markdown/formatting so TTS doesn't pronounce symbols like '**'
-    try:
-        msg = inject_message.get("message") if isinstance(inject_message, dict) else None
-        if isinstance(msg, str):
-            clean = sanitize_text_for_tts(msg)
-            inject_message = {**inject_message, "message": clean}
-    except Exception:
-        pass
+    msg = inject_message.get("message") if isinstance(inject_message, dict) else None
+    inject_message = {**inject_message, "message": msg}
     logger.info(f"Sending InjectAgentMessage: {json.dumps(inject_message)}")
     await ws.send(json.dumps(inject_message))
-
-
-def sanitize_text_for_tts(text: str) -> str:
-    """Remove common markdown so TTS doesn't speak symbols (e.g., '**', '`', links)."""
-    if not text:
-        return text
-    # Remove inline code/backticks
-    text = text.replace("`", "")
-    # Convert markdown links [text](url) -> text
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
-    # Strip bold/italic markers (***, **, *, ___, __, _)
-    text = re.sub(r"\*{1,3}([\s\S]*?)\*{1,3}", r"\1", text)
-    text = re.sub(r"_{1,3}([\s\S]*?)_{1,3}", r"\1", text)
-    # Strip heading markers at line starts
-    text = re.sub(r"(?m)^#{1,6}\s*", "", text)
-    # Collapse extra whitespace
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
-
 
 async def close_websocket_with_timeout(ws, timeout=5):
     """Close websocket with timeout to avoid hanging if no close frame is received."""
@@ -586,7 +571,7 @@ def audio_devices():
 @app.route("/personas")
 def get_personas():
     # Get available personas from AgentTemplates
-    return AgentTemplates.get_available_industries()
+    return AgentTemplates.get_available_personas()
 
 
 @app.route("/tts-models")
